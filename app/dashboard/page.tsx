@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient"; // Ensure this is correctly set up
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Now correctly exported
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Overview } from "@/components/overview";
 import { RecentShipments } from "@/components/recent-shipments";
 import { Shipment } from "@/types/shipment";
 
-// Define User Type
 interface User {
   id: string;
   email: string;
@@ -16,6 +15,8 @@ interface User {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const supabase = createSupabaseBrowserClient(); // ✅ Initialize correctly
+
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [user, setUser] = useState<User | null>(null);
@@ -24,12 +25,9 @@ export default function DashboardPage() {
     const checkUser = async () => {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data?.user) {
-        router.push("/auth/login"); // Redirect if not logged in
+        router.push("/auth/login");
       } else {
-        setUser({
-          id: data.user.id,
-          email: data.user.email ?? "",
-        });
+        setUser({ id: data.user.id, email: data.user.email ?? "" });
       }
     };
 
@@ -46,9 +44,8 @@ export default function DashboardPage() {
 
     checkUser();
     fetchShipments();
-  }, [router]);
+  }, [router, supabase]);
 
-  // 📊 Dynamic Stats Calculation
   const totalShipments = shipments.length;
   const activeShipments = shipments.filter((s) => s.status.toLowerCase() === "in_transit").length;
   const completedShipments = shipments.filter((s) => s.status.toLowerCase() === "delivered").length;
@@ -64,7 +61,6 @@ export default function DashboardPage() {
         <p className="text-center text-gray-500">Loading data...</p>
       ) : (
         <>
-          {/* Statistics Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard title="Total Shipments" value={totalShipments} description="Total shipments recorded" />
             <StatCard title="Active Shipments" value={activeShipments} description="Currently in transit" />
@@ -72,7 +68,6 @@ export default function DashboardPage() {
             <StatCard title="Completed" value={completedShipments} description="Successfully delivered" />
           </div>
 
-          {/* Overview & Recent Shipments */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
@@ -97,7 +92,6 @@ export default function DashboardPage() {
   );
 }
 
-// 📌 Stat Card Component
 interface StatCardProps {
   title: string;
   value: string | number;

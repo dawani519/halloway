@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PackageStatus } from "@/components/package-status";
 import { ShipmentDetails } from "@/components/shipment-details";
-import { supabase } from "@/lib/supabaseClient";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Correct import
+
+const supabase = createSupabaseBrowserClient(); // ✅ Ensure client-side Supabase usage
 
 interface TrackingPageProps {
   params: {
@@ -68,7 +70,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
           <p className="text-muted-foreground">Tracking Number: {params.id}</p>
         </div>
         <div className="grid gap-6">
-        <PackageStatus trackingId={shipment.tracking_number} /> {/* Pass fetched shipment data */}
+          <PackageStatus trackingId={shipment.tracking_number} /> {/* Pass fetched shipment data */}
           <ShipmentDetails trackingId={shipment.tracking_number} /> {/* Pass fetched shipment data */}
         </div>
       </div>

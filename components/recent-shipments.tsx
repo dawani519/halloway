@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/lib/supabaseClient";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Corrected import
+
+const supabase = createSupabaseBrowserClient(); // ✅ Ensure client-side Supabase usage
 
 // Define TypeScript type for Shipment
 interface Shipment {
@@ -11,13 +13,14 @@ interface Shipment {
   destination: string;
   cost: number;
   status: string;
-  createdAt: EpochTimeStamp;
+  createdAt: string; // ✅ Changed from EpochTimeStamp to string
   tracking_number: string;
 }
 
 export function RecentShipments() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchShipments = async () => {
@@ -27,6 +30,7 @@ export function RecentShipments() {
 
       if (error) {
         console.error("Error fetching shipments:", error);
+        setError("Failed to load shipments.");
       } else {
         setShipments(data || []);
       }
@@ -53,6 +57,12 @@ export function RecentShipments() {
           <TableRow>
             <TableCell colSpan={6} className="text-center text-muted-foreground">
               Loading...
+            </TableCell>
+          </TableRow>
+        ) : error ? (
+          <TableRow>
+            <TableCell colSpan={6} className="text-center text-red-500">
+              {error}
             </TableCell>
           </TableRow>
         ) : shipments.length === 0 ? (

@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, Clock, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/lib/supabaseClient"; // Ensure Supabase client is imported
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Correct import
+
+const supabase = createSupabaseBrowserClient(); // ✅ Ensure client-side Supabase usage
 
 interface PackageStatusProps {
   trackingId: string;
@@ -20,6 +22,7 @@ interface StatusStep {
 export function PackageStatus({ trackingId }: PackageStatusProps) {
   const [steps, setSteps] = useState<StatusStep[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTrackingData = async () => {
@@ -33,6 +36,7 @@ export function PackageStatus({ trackingId }: PackageStatusProps) {
 
       if (error) {
         console.error("Error fetching tracking data:", error);
+        setError("Failed to load tracking data.");
       } else {
         console.log("Fetched tracking data:", data); // Debugging
         setSteps(data || []);
@@ -51,9 +55,11 @@ export function PackageStatus({ trackingId }: PackageStatusProps) {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <p>Loading tracking details...</p>
+          <p className="text-gray-500">Loading tracking details...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
         ) : steps.length === 0 ? (
-          <p>No tracking data found for this tracking number.</p>
+          <p className="text-gray-500">No tracking data found for this tracking number.</p>
         ) : (
           <div className="flex flex-col gap-4">
             {steps.map((step, index) => (
