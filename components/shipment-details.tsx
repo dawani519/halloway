@@ -1,20 +1,55 @@
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+"use client";
+
+import { useEffect, useState } from "react";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/lib/supabaseClient"; // Ensure this is correctly configured
 
 interface ShipmentDetailsProps {
-  trackingId: string
+  trackingId: string;
+}
+
+interface Shipment {
+  tracking_number: string;
+  origin: string;
+  destination: string;
+  service_type: string;
+  weight: string;
+  dimensions: string;
+  estimated_delivery: string;
 }
 
 export function ShipmentDetails({ trackingId }: ShipmentDetailsProps) {
-  // In a real application, you would fetch the shipment details based on the trackingId
-  // For now, we'll use mock data
-  const shipmentDetails = {
-    origin: "New York, United States",
-    destination: "London, United Kingdom",
-    serviceType: "Express International",
-    weight: "2.5 kg",
-    dimensions: "30 x 20 x 15 cm",
-    estimatedDelivery: "February 17, 2024",
+  const [shipment, setShipment] = useState<Shipment | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchShipment = async () => {
+      const { data, error } = await supabase
+        .from("shipments") // Make sure your table name is correct
+        .select(
+          "tracking_number, origin, destination, service_type, weight, dimensions, estimated_delivery"
+        )
+        .eq("tracking_number", trackingId) // Find the shipment with this tracking number
+        .single();
+
+      if (error) {
+        console.error("Error fetching shipment:", error);
+      } else {
+        setShipment(data);
+      }
+      setLoading(false);
+    };
+
+    fetchShipment();
+  }, [trackingId]);
+
+  if (loading) {
+    return <p className="text-center text-muted-foreground">Loading shipment details...</p>;
+  }
+
+  if (!shipment) {
+    return <p className="text-center text-muted-foreground">Shipment not found.</p>;
   }
 
   return (
@@ -27,36 +62,35 @@ export function ShipmentDetails({ trackingId }: ShipmentDetailsProps) {
           <TableBody>
             <TableRow>
               <TableCell className="font-medium">Tracking Number</TableCell>
-              <TableCell>{trackingId}</TableCell>
+              <TableCell>{shipment.tracking_number}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Origin</TableCell>
-              <TableCell>{shipmentDetails.origin}</TableCell>
+              <TableCell>{shipment.origin}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Destination</TableCell>
-              <TableCell>{shipmentDetails.destination}</TableCell>
+              <TableCell>{shipment.destination}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Service Type</TableCell>
-              <TableCell>{shipmentDetails.serviceType}</TableCell>
+              <TableCell>{shipment.service_type}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Weight</TableCell>
-              <TableCell>{shipmentDetails.weight}</TableCell>
+              <TableCell>{shipment.weight}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Dimensions</TableCell>
-              <TableCell>{shipmentDetails.dimensions}</TableCell>
+              <TableCell>{shipment.dimensions}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Estimated Delivery</TableCell>
-              <TableCell>{shipmentDetails.estimatedDelivery}</TableCell>
+              <TableCell>{shipment.estimated_delivery}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }
-
