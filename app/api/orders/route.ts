@@ -1,9 +1,9 @@
-import { createSupabaseServerClient } from "@/lib/supabaseClient";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const supabase = createSupabaseServerClient(); // ✅ Use the Server Client
+    const supabase = createSupabaseBrowserClient(); // ✅ Use the Server Client
     const { user_id, tracking_number, destination } = await req.json();
 
     const { data, error } = await supabase.from("orders").insert([
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const supabase = createSupabaseServerClient();
+    const supabase = createSupabaseBrowserClient();
     const { data, error } = await supabase.from("orders").select("*");
 
     if (error) throw error;

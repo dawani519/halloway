@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, Clock, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createSupabaseServerClient } from "@/lib/supabaseClient"; // ✅ Correct import
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Correct import
 
-const supabase = createSupabaseServerClient(); // ✅ Ensure client-side Supabase usage
+const supabase = createSupabaseBrowserClient(); // ✅ Ensure client-side Supabase usage
 
 interface PackageStatusProps {
   trackingId: string;

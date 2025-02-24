@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createSupabaseServerClient } from "@/lib/supabaseClient"; // ✅ Corrected import
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Corrected import
 
-const supabase = createSupabaseServerClient(); // ✅ Ensure client-side Supabase usage
+const supabase = createSupabaseBrowserClient(); // ✅ Ensure client-side Supabase usage
 
 interface ShipmentDetailsProps {
   trackingId: string;
