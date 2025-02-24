@@ -1,4 +1,4 @@
-import { createServerClient, createBrowserClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -21,11 +21,4 @@ export const createSupabaseServerClient = () => {
       },
     },
   });
-};
-
-/**
- * ✅ Create a Supabase client for Client Components (useEffect, hooks, etc.)
- */
-export const createSupabaseBrowserClient = () => {
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
 };

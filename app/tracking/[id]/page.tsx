@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PackageStatus } from "@/components/package-status";
 import { ShipmentDetails } from "@/components/shipment-details";
-import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Correct import
+import { createSupabaseServerClient } from "@/lib/supabaseClient"; // ✅ Correct import
 
-const supabase = createSupabaseBrowserClient(); // ✅ Ensure client-side Supabase usage
+const supabase = createSupabaseServerClient(); // ✅ Ensure client-side Supabase usage
 
 interface TrackingPageProps {
   params: {

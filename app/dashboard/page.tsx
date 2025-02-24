@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Now correctly exported
+import { createSupabaseServerClient } from "@/lib/supabaseClient"; // ✅ Now correctly exported
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Overview } from "@/components/overview";
 import { RecentShipments } from "@/components/recent-shipments";
@@ -15,7 +15,7 @@ interface User {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const supabase = createSupabaseBrowserClient(); // ✅ Initialize correctly
+  const supabase = createSupabaseServerClient(); // ✅ Initialize correctly
 
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

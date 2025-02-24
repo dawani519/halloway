@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Corrected import
+import { createSupabaseServerClient } from "@/lib/supabaseClient"; // ✅ Corrected import
 
-const supabase = createSupabaseBrowserClient(); // ✅ Ensure client-side Supabase usage
+const supabase = createSupabaseServerClient(); // ✅ Ensure client-side Supabase usage
 
 // Define TypeScript type for Shipment
 interface Shipment {
