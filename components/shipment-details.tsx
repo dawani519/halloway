@@ -15,10 +15,12 @@ interface Shipment {
   tracking_number: string;
   origin: string;
   destination: string;
-  service_type: string;
+  serviceType: string;
   weight: string;
   dimensions: string;
-  estimated_delivery: string;
+  estimatedDelivery: string | null;
+  status: string;
+  history: { current_location: string; last_updated: string }[]; // ✅ History is an array
 }
 
 export function ShipmentDetails({ trackingId }: ShipmentDetailsProps) {
@@ -28,20 +30,24 @@ export function ShipmentDetails({ trackingId }: ShipmentDetailsProps) {
 
   useEffect(() => {
     const fetchShipment = async () => {
-      const { data, error } = await supabase
-        .from("shipments") // ✅ Ensure table name is correct
-        .select(
-          "tracking_number, origin, destination, service_type, weight, dimensions, estimated_delivery"
-        )
-        .eq("tracking_number", trackingId) // ✅ Ensure query is correct
-        .single();
+      console.log("Fetching shipment for tracking ID:", trackingId); // Debugging
 
-      if (error) {
-        console.error("Error fetching shipment:", error);
+      const { data, error } = await supabase
+        .from("shipment") // ✅ Ensure table name is correct
+        .select(
+          "tracking_number, origin, destination, serviceType, weight, dimensions, estimatedDelivery, status, history"
+        ) // ✅ Fetch history instead of current_location/last_updated
+        .eq("tracking_number", trackingId)
+        .maybeSingle(); // Handle cases where data might not exist
+
+      console.log("Supabase Response:", { data, error }); // Debugging
+
+      if (error || !data) {
         setError("Shipment not found.");
       } else {
         setShipment(data);
       }
+
       setLoading(false);
     };
 
@@ -60,6 +66,11 @@ export function ShipmentDetails({ trackingId }: ShipmentDetailsProps) {
     return <p className="text-center text-muted-foreground">No shipment data available.</p>;
   }
 
+  // ✅ Extract latest history entry (if available)
+  const latestHistory = shipment.history?.length > 0 ? shipment.history[shipment.history.length - 1] : null;
+  const latestLocation = latestHistory?.current_location || "N/A";
+  const lastUpdated = latestHistory?.last_updated || "N/A";
+
   return (
     <Card>
       <CardHeader>
@@ -73,6 +84,10 @@ export function ShipmentDetails({ trackingId }: ShipmentDetailsProps) {
               <TableCell>{shipment.tracking_number || "N/A"}</TableCell>
             </TableRow>
             <TableRow>
+              <TableCell className="font-medium">Status</TableCell>
+              <TableCell>{shipment.status || "N/A"}</TableCell>
+            </TableRow>
+            <TableRow>
               <TableCell className="font-medium">Origin</TableCell>
               <TableCell>{shipment.origin || "N/A"}</TableCell>
             </TableRow>
@@ -82,7 +97,7 @@ export function ShipmentDetails({ trackingId }: ShipmentDetailsProps) {
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Service Type</TableCell>
-              <TableCell>{shipment.service_type || "N/A"}</TableCell>
+              <TableCell>{shipment.serviceType || "N/A"}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Weight</TableCell>
@@ -94,7 +109,15 @@ export function ShipmentDetails({ trackingId }: ShipmentDetailsProps) {
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Estimated Delivery</TableCell>
-              <TableCell>{shipment.estimated_delivery || "N/A"}</TableCell>
+              <TableCell>{shipment.estimatedDelivery || "N/A"}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Current Location</TableCell>
+              <TableCell>{latestLocation}</TableCell> {/* ✅ Updated to use latest history entry */}
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Last Updated</TableCell>
+              <TableCell>{lastUpdated}</TableCell> {/* ✅ Updated to use latest history entry */}
             </TableRow>
           </TableBody>
         </Table>

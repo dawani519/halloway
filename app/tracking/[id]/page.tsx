@@ -79,7 +79,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
           <p className="text-muted-foreground">Tracking Number: {shipment.tracking_number}</p>
         </div>
         <div className="grid gap-6">
-          <PackageStatus trackingId={shipment.tracking_number} />
+          <PackageStatus trackingNumber={shipment.tracking_number} />
           <ShipmentDetails trackingId={shipment.tracking_number} />
         </div>
       </div>
