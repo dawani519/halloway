@@ -97,10 +97,10 @@ export function Header() {
             asChild
             className="border-rainbow-blue text-rainbow-blue hover:bg-rainbow-blue hover:text-white"
           >
-            <Link href="/login">Sign In</Link>
+            <Link href="auth/login">Sign In</Link>
           </Button>
           <Button asChild className="bg-rainbow-blue text-white hover:bg-rainbow-indigo">
-            <Link href="/register">Get Started</Link>
+            <Link href="auth/register">Get Started</Link>
           </Button>
         </div>
       </div>
