@@ -2,49 +2,62 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Now correctly exported
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Overview } from "@/components/overview";
 import { RecentShipments } from "@/components/recent-shipments";
 import { Shipment } from "@/types/shipment";
 
-interface User {
-  id: string;
-  email: string;
-}
-
 export default function DashboardPage() {
   const router = useRouter();
-  const supabase = createSupabaseBrowserClient(); // ✅ Initialize correctly
-
+  const supabase = createSupabaseBrowserClient();
   const [shipments, setShipments] = useState<Shipment[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data?.user) {
-        router.push("/auth/login");
-      } else {
-        setUser({ id: data.user.id, email: data.user.email ?? "" });
-      }
-    };
+    const checkUserSession = async () => {
+      setLoading(true);
 
-    const fetchShipments = async () => {
-      const { data, error } = await supabase
-        .from("shipments")
-        .select("id, destination, cost, status, createdAt, tracking_number");
+      const { data, error } = await supabase.auth.getSession(); // ✅ Get full session
+      console.log("🔍 Supabase session:", data);
 
-      if (!error && data) {
-        setShipments(data as Shipment[]);
+      const userEmail = data?.session?.user?.email; // ✅ Check if email exists
+
+      if (error || !userEmail) {
+        console.warn("❌ No user email found, redirecting...");
+        router.replace("/auth/login");
+        return;
       }
+
+      setEmail(userEmail); // ✅ Store email in state
       setLoading(false);
     };
 
-    checkUser();
-    fetchShipments();
+    checkUserSession();
   }, [router, supabase]);
+
+  useEffect(() => {
+    if (email) {
+      const fetchShipments = async () => {
+        const { data, error } = await supabase
+          .from("shipments")
+          .select("id, destination, cost, status, createdAt, tracking_number");
+
+        if (!error && data) {
+          setShipments(data as Shipment[]);
+        }
+      };
+
+      fetchShipments();
+    }
+  }, [email, supabase]);
+
+  if (loading) {
+    return <p className="text-center text-gray-500">Checking authentication...</p>;
+  }
+
+  if (!email) return null; // ✅ Prevent flickering UI before redirect
 
   const totalShipments = shipments.length;
   const activeShipments = shipments.filter((s) => s.status.toLowerCase() === "in_transit").length;
@@ -57,37 +70,31 @@ export default function DashboardPage() {
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
       </div>
 
-      {loading ? (
-        <p className="text-center text-gray-500">Loading data...</p>
-      ) : (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="Total Shipments" value={totalShipments} description="Total shipments recorded" />
-            <StatCard title="Active Shipments" value={activeShipments} description="Currently in transit" />
-            <StatCard title="Total Revenue" value={`$${totalRevenue.toFixed(2)}`} description="Total revenue from shipments" />
-            <StatCard title="Completed" value={completedShipments} description="Successfully delivered" />
-          </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Total Shipments" value={totalShipments} description="Total shipments recorded" />
+        <StatCard title="Active Shipments" value={activeShipments} description="Currently in transit" />
+        <StatCard title="Total Revenue" value={`$${totalRevenue.toFixed(2)}`} description="Total revenue from shipments" />
+        <StatCard title="Completed" value={completedShipments} description="Successfully delivered" />
+      </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
-              <CardHeader>
-                <CardTitle>Overview</CardTitle>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <Overview shipments={shipments} />
-              </CardContent>
-            </Card>
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Recent Shipments</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RecentShipments />
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Overview</CardTitle>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <Overview shipments={shipments} />
+          </CardContent>
+        </Card>
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Recent Shipments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RecentShipments />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
