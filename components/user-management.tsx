@@ -43,7 +43,7 @@ export function UserManagement() {
             id: user.id,
             email: user.email,
             name: user.user_metadata?.full_name || "No Name",
-            role: user.user_metadata?.role || "customer", // Default role
+            role: user.user_metadata?.role || "customer",
           }))
         );
       }
@@ -51,7 +51,7 @@ export function UserManagement() {
     }
 
     fetchUsers();
-  }, [supabase]);
+  }, []);
 
   const handleDeleteUser = async (userId: string) => {
     const { error } = await supabase.auth.admin.deleteUser(userId);
@@ -89,7 +89,7 @@ export function UserManagement() {
     toast.success("User added successfully.");
     setUsers([...users, { id: data.user?.id, ...newUser }]);
     setIsAddingUser(false);
-    setNewUser({ email: "", name: "", role: "customer" });
+    setNewUser({ email: "", name: "", role: "customer" }); // Reset form
   };
 
   const handleUpdateRole = async (userId: string, newRole: string) => {
@@ -182,31 +182,23 @@ export function UserManagement() {
           <DialogHeader>
             <DialogTitle>Add User</DialogTitle>
           </DialogHeader>
+          <Label>Name</Label>
           <Input placeholder="Name" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} />
+          <Label>Email</Label>
           <Input placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
+          <Label>Role</Label>
+          <Select onValueChange={(value) => setNewUser({ ...newUser, role: value })} value={newUser.role}>
+            <SelectTrigger><SelectValue placeholder="Select Role" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="customer">Customer</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+            </SelectContent>
+          </Select>
           <DialogFooter>
             <Button onClick={handleAddUser}>Add User</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Edit Role Dialog */}
-      {selectedUser && (
-        <Dialog open={isEditing} onOpenChange={setIsEditing}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Role</DialogTitle>
-            </DialogHeader>
-            <Select onValueChange={(value) => handleUpdateRole(selectedUser.id, value)}>
-              <SelectTrigger><SelectValue placeholder={selectedUser.role} /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="customer">Customer</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }

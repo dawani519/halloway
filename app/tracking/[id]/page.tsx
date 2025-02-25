@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PackageStatus } from "@/components/package-status";
 import { ShipmentDetails } from "@/components/shipment-details";
-import { createSupabaseBrowserClient } from "@/lib/supabaseClient"; // ✅ Correct import
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
-const supabase = createSupabaseBrowserClient(); // ✅ Ensure client-side Supabase usage
+const supabase = createSupabaseBrowserClient();
 
 interface TrackingPageProps {
   params: {
@@ -22,21 +22,30 @@ export default function TrackingPage({ params }: TrackingPageProps) {
 
   useEffect(() => {
     const fetchShipment = async () => {
-      console.log("Fetching shipment for tracking number:", params.id); // Debugging
+      if (!params.id) {
+        setError("Invalid tracking number");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Fetching shipment for tracking number:", params.id);
 
       const { data, error } = await supabase
-        .from("shipments")
+        .from("shipment") // ✅ Corrected table name
         .select("*")
         .eq("tracking_number", params.id)
-        .single(); // Expecting one result
+        .maybeSingle(); // ✅ Avoids throwing an error if no match
 
-      console.log("Supabase Response:", { data, error }); // Debugging
+      console.log("Supabase Response:", { data, error });
 
-      if (error || !data) {
+      if (error) {
+        setError("Error fetching shipment details");
+      } else if (!data) {
         setError("Shipment not found");
       } else {
         setShipment(data);
       }
+      
       setLoading(false);
     };
 
@@ -67,11 +76,11 @@ export default function TrackingPage({ params }: TrackingPageProps) {
       <div className="mx-auto max-w-4xl space-y-8">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Track Your Shipment</h1>
-          <p className="text-muted-foreground">Tracking Number: {params.id}</p>
+          <p className="text-muted-foreground">Tracking Number: {shipment.tracking_number}</p>
         </div>
         <div className="grid gap-6">
-          <PackageStatus trackingId={shipment.tracking_number} /> {/* Pass fetched shipment data */}
-          <ShipmentDetails trackingId={shipment.tracking_number} /> {/* Pass fetched shipment data */}
+          <PackageStatus trackingId={shipment.tracking_number} />
+          <ShipmentDetails trackingId={shipment.tracking_number} />
         </div>
       </div>
     </div>

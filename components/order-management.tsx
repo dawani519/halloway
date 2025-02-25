@@ -9,23 +9,20 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MoreHorizontal, Loader2, Plus } from "lucide-react";
+import { MoreHorizontal, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export function OrderManagement() {
   const supabase = createClientComponentClient();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [shipments, setShipments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isOrderModalOpen, setOrderModalOpen] = useState(false);
-  const [newOrder, setNewOrder] = useState({
-    original_location: "",
+  const [newShipment, setNewShipment] = useState({
+    origin: "",
     destination: "",
     weight: "",
     dimensions: "",
@@ -33,108 +30,140 @@ export function OrderManagement() {
   });
 
   useEffect(() => {
-    async function fetchOrders() {
+    async function fetchShipments() {
       setLoading(true);
-      const { data, error } = await supabase.from("Orders").select("*");
+      const { data, error } = await supabase.from("shipment").select("*");
 
       if (error) {
-        toast.error("Failed to load orders.");
+        toast.error("Failed to load shipments.");
       } else {
-        setOrders(data);
+        setShipments(data);
       }
       setLoading(false);
     }
 
-    fetchOrders();
-  }, [supabase]);
+    fetchShipments();
+  }, []);
 
-  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
-    const { error } = await supabase
-      .from("Orders")
-      .update({ status: newStatus, start_date: newStatus === "Shipped" ? new Date().toISOString() : null })
-      .eq("id", orderId);
+  const generateTrackingId = () => Math.random().toString(36).substring(2, 10).toUpperCase();
 
-    if (error) {
-      toast.error("Failed to update status.");
+  const handleAddShipment = async (e: any) => {
+    e.preventDefault();
+
+    if (!newShipment.origin || !newShipment.destination || !newShipment.weight || !newShipment.dimensions) {
+      toast.error("Please fill in all required fields.");
       return;
     }
 
-    toast.success(`Order marked as ${newStatus}.`);
-    setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus, start_date: newStatus === "Shipped" ? new Date().toISOString() : order.start_date } : order
-      )
-    );
-  };
-
-  const generateTrackingId = () => {
-    return Math.random().toString(36).substring(2, 10).toUpperCase();
-  };
-
-  const handleAddOrder = async (e: any) => {
-    e.preventDefault();
-    const orderData = {
+    const shipmentData = {
       id: crypto.randomUUID(),
-      tracking_id: generateTrackingId(),
-      original_location: newOrder.original_location,
-      destination: newOrder.destination,
+      tracking_number: generateTrackingId(),
+      origin: newShipment.origin.trim(),
+      destination: newShipment.destination.trim(),
       status: "Processing",
-      weight: parseFloat(newOrder.weight),
-      dimensions: newOrder.dimensions,
+      weight: parseFloat(newShipment.weight),
+      dimensions: newShipment.dimensions.trim(),
       created_at: new Date().toISOString(),
-      expected_delivery: newOrder.expected_delivery,
+      expected_delivery: newShipment.expected_delivery || null,
     };
 
-    const { error } = await supabase.from("Orders").insert([orderData]);
+    const { error } = await supabase.from("shipment").insert([shipmentData]);
 
     if (error) {
-      toast.error("Failed to add order.");
+      toast.error("Failed to add shipment.");
       return;
     }
 
-    toast.success("Order added successfully.");
-    setOrders([...orders, orderData]);
-    setOrderModalOpen(false);
+    toast.success("Shipment added successfully.");
+    setShipments([...shipments, shipmentData]);
+    setNewShipment({
+      origin: "",
+      destination: "",
+      weight: "",
+      dimensions: "",
+      expected_delivery: "",
+    });
   };
 
-  const filteredOrders = orders.filter(
-    (order) =>
-      order.tracking_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.original_location.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleDeleteShipment = async (shipmentId: string) => {
+    const { error } = await supabase.from("shipment").delete().eq("id", shipmentId);
+
+    if (error) {
+      toast.error("Failed to delete shipment.");
+      return;
+    }
+
+    toast.success("Shipment deleted.");
+    setShipments(shipments.filter((shipment) => shipment.id !== shipmentId));
+  };
+
+  const filteredShipments = shipments.filter(
+    (shipment) =>
+      shipment.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      shipment.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      shipment.origin.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-4">
-      {/* Search (Left) & Add Order (Right) */}
+      {/* Search & Add Shipment */}
       <div className="flex items-center justify-between">
-        <Input placeholder="Search orders..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="max-w-sm" />
-        <Dialog open={isOrderModalOpen} onOpenChange={setOrderModalOpen}>
+        <Input
+          placeholder="Search shipments..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+        <Dialog>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Add Order
+              Add Shipment
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Add New Order</DialogTitle>
+              <DialogTitle>Add New Shipment</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleAddOrder} className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleAddShipment} className="grid grid-cols-2 gap-4">
               <Input value={generateTrackingId()} disabled />
-              <Input placeholder="Shipping From" required onChange={(e) => setNewOrder({ ...newOrder, original_location: e.target.value })} />
-              <Input placeholder="Destination" required onChange={(e) => setNewOrder({ ...newOrder, destination: e.target.value })} />
-              <Input placeholder="Weight (kg)" type="number" required onChange={(e) => setNewOrder({ ...newOrder, weight: e.target.value })} />
-              <Input placeholder="Dimensions (e.g. 50x40x30 cm)" required onChange={(e) => setNewOrder({ ...newOrder, dimensions: e.target.value })} />
-              <Input placeholder="Expected Delivery (YYYY-MM-DD)" type="date" onChange={(e) => setNewOrder({ ...newOrder, expected_delivery: e.target.value })} />
+              <Input
+                placeholder="Origin"
+                required
+                onChange={(e) => setNewShipment({ ...newShipment, origin: e.target.value })}
+              />
+              <Input
+                placeholder="Destination"
+                required
+                onChange={(e) => setNewShipment({ ...newShipment, destination: e.target.value })}
+              />
+              <Input
+                placeholder="Weight (kg)"
+                type="number"
+                required
+                onChange={(e) => setNewShipment({ ...newShipment, weight: e.target.value })}
+              />
+              <Input
+                placeholder="Dimensions (e.g. 50x40x30 cm)"
+                required
+                onChange={(e) => setNewShipment({ ...newShipment, dimensions: e.target.value })}
+              />
+              <Input
+                placeholder="Expected Delivery (YYYY-MM-DD)"
+                type="date"
+                onChange={(e) => setNewShipment({ ...newShipment, expected_delivery: e.target.value })}
+              />
               <div className="col-span-2">
-                <Button type="submit" className="w-full">Create Order</Button>
+                <Button type="submit" className="w-full">
+                  Create Shipment
+                </Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* Table */}
       {loading ? (
         <div className="flex justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
@@ -144,7 +173,7 @@ export function OrderManagement() {
           <TableHeader>
             <TableRow>
               <TableHead>Tracking ID</TableHead>
-              <TableHead>Shipping From</TableHead>
+              <TableHead>Origin</TableHead>
               <TableHead>Destination</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Weight (kg)</TableHead>
@@ -155,30 +184,50 @@ export function OrderManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders.length > 0 ? (
-              filteredOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>{order.tracking_id}</TableCell>
-                  <TableCell>{order.original_location}</TableCell>
-                  <TableCell>{order.destination}</TableCell>
-                  <TableCell><Badge variant="outline">{order.status}</Badge></TableCell>
-                  <TableCell>{order.weight}</TableCell>
-                  <TableCell>{order.dimensions}</TableCell>
-                  <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>{order.expected_delivery ? new Date(order.expected_delivery).toLocaleDateString() : "—"}</TableCell>
+            {filteredShipments.length > 0 ? (
+              filteredShipments.map((shipment) => (
+                <TableRow key={shipment.id}>
+                  <TableCell>{shipment.tracking_number}</TableCell>
+                  <TableCell>{shipment.origin}</TableCell>
+                  <TableCell>{shipment.destination}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{shipment.status}</Badge>
+                  </TableCell>
+                  <TableCell>{shipment.weight}</TableCell>
+                  <TableCell>{shipment.dimensions}</TableCell>
+                  <TableCell>{new Date(shipment.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {shipment.expected_delivery
+                      ? new Date(shipment.expected_delivery).toLocaleDateString()
+                      : "—"}
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost"><MoreHorizontal className="h-4 w-4" /></Button>
+                        <Button variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteShipment(shipment.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
-            ) : <TableRow><TableCell colSpan={9} className="text-center py-4">No orders found.</TableCell></TableRow>}
+            ) : (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-4">
+                  No shipments found.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       )}
